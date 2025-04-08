@@ -1,8 +1,8 @@
 import os
 import sys
 from preprocessing import process_image
-from preprocessing_monai import monai_pipeline
 from train_unet_monai import train_unet
+from predict_with_unet import predict_with_gt
 
 
 def process_batch(input_dir, output_dir):
@@ -17,13 +17,13 @@ if __name__ == "__main__":
     test_dir = "Dataset_BUSI_with_GT"
     output_dir = "preprocessed"
 
-    mode = "monai"  # Cambiar a "monai" si se quiere usar MONAI
+    mode = "predict"
 
     if mode == "classic":
         process_batch(test_dir, output_dir)
-    elif mode == "monai":
-        monai_pipeline(test_dir, output_dir)
     elif mode == "train":
         train_unet()
+    elif mode == "predict":
+        predict_with_gt()
     else:
-        print("Modo no reconocido. Usa 'classic', 'monai' o 'train'.")
+        print("Modo no reconocido. Usa 'classic', 'predict' o 'train'.")
