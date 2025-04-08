@@ -1,0 +1,95 @@
+
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Preprocesamiento Basado en Textura para la Segmentación de Tumores en Ecografías Mamarias con MONAI}
+\author{María del Mar Ávila, Juan del Junco, Nerea Jiménez\\Tutora: María José Jiménez}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+El presente proyecto investiga el impacto del preprocesamiento de imágenes mediante técnicas tradicionales y basadas en textura en la segmentación de tumores en ecografías mamarias. Se implementan filtros de Butterworth y mediana adaptativa, así como características de primer y segundo orden (media, entropía, autocorrelación y homogeneidad). Las imágenes preprocesadas se introducen en una red U-Net entrenada con MONAI. Los resultados muestran que el preprocesamiento basado en textura mejora significativamente las métricas de segmentación como el Dice y el IoU, validando la utilidad de la información textural en imágenes ultrasónicas.
+\end{abstract}
+
+\textbf{Palabras clave:} segmentación, MONAI, características de textura, U-Net, preprocesamiento, ecografía mamaria.
+
+\section{Introducción}
+El cáncer de mama representa una de las principales causas de mortalidad femenina. La segmentación precisa de tumores en imágenes de ecografía mamaria es esencial para el diagnóstico asistido por computadora. Sin embargo, estas imágenes presentan artefactos, bajo contraste y ruido speckle que dificultan la segmentación automática. Este trabajo propone comparar métodos de preprocesamiento tradicionales y texturales para mejorar la calidad de segmentación utilizando una red U-Net.
+
+\section{Marco Teórico}
+El preprocesamiento de imágenes busca mejorar la calidad visual y resaltar características relevantes. Los filtros tradicionales como Butterworth y mediana adaptativa atenúan el ruido, pero pueden perder detalles importantes. En cambio, las características de textura (orden 1: media, entropía; orden 2: autocorrelación, homogeneidad) permiten cuantificar variaciones espaciales de intensidad útiles para diferenciar regiones de interés, como tumores.
+
+\section{Descripción del Proyecto}
+Este proyecto se implementa en Python, utilizando OpenCV, NumPy, scikit-image y MONAI. El flujo de trabajo incluye:
+\begin{itemize}
+    \item Preprocesamiento de imágenes con filtros tradicionales y texturales.
+    \item Fusión de canales para obtener imágenes RGB enriquecidas.
+    \item Segmentación con una red U-Net.
+    \item Evaluación de resultados con métricas clásicas.
+\end{itemize}
+
+\section{Metodología}
+\subsection{Preprocesamiento}
+Se aplican:
+\begin{itemize}
+    \item \textbf{Butterworth}: filtro pasa altos en dominio de frecuencia.
+    \item \textbf{Mediana adaptativa}: reduce ruido speckle.
+    \item \textbf{Primer orden}: media y entropía.
+    \item \textbf{Segundo orden}: bordes (Canny) y Laplaciano como aproximación a autocorrelación y homogeneidad.
+\end{itemize}
+
+Las imágenes se fusionan en RGB: canal original + canal de textura 1 + canal de textura 2.
+
+\subsection{Segmentación con U-Net}
+La red U-Net se entrena con imágenes originales y preprocesadas. Se utilizan 30 épocas, tamaño de entrada 256x256, y pérdida DiceLoss. El modelo se evalúa con las métricas: Accuracy, IoU, DSC, Sensitivity, Specificity y Precision.
+
+\section{Resultados}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{comparacion_preprocessed.png}
+\caption{Ejemplo de segmentación con imagen preprocesada por segundo orden}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Métrica} & \textbf{Original} & \textbf{Segundo Orden} \\
+\hline
+Global Accuracy & 0.865 & 0.976 \\
+DSC & 0.721 & 0.755 \\
+IoU & 0.481 & 0.602 \\
+Precision & 0.597 & 0.703 \\
+Sensitivity & 0.750 & 0.803 \\
+Specificity & 0.883 & 0.983 \\
+\hline
+\end{tabular}
+\caption{Comparación de métricas de segmentación entre métodos}
+\end{table}
+
+\section{Discusión}
+Los resultados evidencian que las características de textura aumentan la diferenciación de tumores frente al fondo, mejorando la precisión de segmentación. La segunda orden destaca por resaltar bordes y contornos relevantes. Las métricas mejoran considerablemente frente a los métodos tradicionales.
+
+\section{Conclusiones y Trabajo Futuro}
+El preprocesamiento basado en textura mejora sustancialmente la segmentación en ecografías mamarias. Se propone, como trabajo futuro, probar este enfoque en otros órganos o técnicas de imagen, así como implementar GLCM completo para segundo orden.
+
+\section*{Referencias}
+\begin{enumerate}
+    \item S. Cai et al., "A Study on the Combination of Image Preprocessing Method Based on Texture Feature and Segmentation Algorithm for Breast Ultrasound Images", IEEE ICCECE, 2022.
+    \item Yap, M. H. et al., "Automated breast ultrasound lesions detection using convolutional neural networks", IEEE JBHI, 2017.
+    \item Ibtehaz, N. and Rahman, M. S., "MultiResUNet: Rethinking the U-Net architecture", Neural Networks, 2020.
+\end{enumerate}
+
+\end{document}
