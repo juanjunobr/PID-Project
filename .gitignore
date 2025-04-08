@@ -1,2 +1,5 @@
 preprocessed
 Dataset_BUSI_with_GT
+Dataset_BUSI_train
+predicted_masks
+__pycache__

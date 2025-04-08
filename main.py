@@ -2,6 +2,8 @@ import os
 import sys
 from preprocessing import process_image
 from preprocessing_monai import monai_pipeline
+from train_unet_monai import train_unet
+
 
 def process_batch(input_dir, output_dir):
     for root, _, files in os.walk(input_dir):
@@ -21,5 +23,7 @@ if __name__ == "__main__":
         process_batch(test_dir, output_dir)
     elif mode == "monai":
         monai_pipeline(test_dir, output_dir)
+    elif mode == "train":
+        train_unet()
     else:
-        print("Modo no reconocido. Usa 'classic' o 'monai'.")
+        print("Modo no reconocido. Usa 'classic', 'monai' o 'train'.")
