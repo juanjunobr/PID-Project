@@ -4,6 +4,8 @@ import numpy as np
 import re
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 
+PREPROC_TAG = "_butterworth"
+
 def dice_score(y_true, y_pred):
     intersection = np.sum(y_true * y_pred)
     return (2. * intersection) / (np.sum(y_true) + np.sum(y_pred) + 1e-7)
@@ -19,7 +21,8 @@ def specificity_score(y_true, y_pred):
 
 #Mapeo de nombres de predicciones a GT reales
 def get_gt_filename(pred_mask_name):
-    match = re.match(r"mask_(benign|malignant|normal)_(\d+)\.png", pred_mask_name)
+    pred_mask_name = pred_mask_name.replace(PREPROC_TAG, "").replace(".png", "")
+    match = re.match(r"(benign|malignant|normal)_(\d+)", pred_mask_name)
     if match:
         clase, numero = match.groups()
         return f"{clase} ({int(numero)})_mask.png"
@@ -32,7 +35,7 @@ def evaluate_all(gt_dir, pred_dir):
 
     for pred_file in pred_files:
         try:
-            gt_filename = get_gt_filename(pred_file)
+            gt_filename = get_gt_filename(pred_file.replace("mask_", ""))
             if not gt_filename:
                 print(f"Nombre de predicción no válido: {pred_file}")
                 continue
@@ -86,5 +89,5 @@ def evaluate_all(gt_dir, pred_dir):
 
 if __name__ == "__main__":
     gt_dir = "Dataset_BUSI_train"
-    pred_dir = "predictions_from_GT"
+    pred_dir = "predictions_from_GT_first_order"
     evaluate_all(gt_dir, pred_dir)

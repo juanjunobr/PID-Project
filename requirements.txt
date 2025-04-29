@@ -5,3 +5,4 @@ scikit-image
 scipy
 torch
 monai
+scikit-learn

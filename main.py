@@ -28,7 +28,7 @@ if __name__ == "__main__":
         predict_with_gt()
     elif mode == "evaluate":
         gt_dir_root = "Dataset_BUSI_train"
-        pred_dir = "predictions_from_GT/"
+        pred_dir = "predictions_from_GT_butterworth/"
         evaluate_all(gt_dir_root, pred_dir)
     else:
         print("Modo no reconocido. Usa 'classic', 'predict', 'train' o 'evaluate'.")

@@ -1,39 +1,44 @@
 import os
-import glob
 import numpy as np
 import torch
 import cv2
 import matplotlib.pyplot as plt
-from monai.data import Dataset, DataLoader
+from monai.data import DataLoader
 from monai.networks.nets.unet import UNet
 from monai.losses import DiceLoss
 from monai.metrics import DiceMetric
 from monai.utils import set_determinism
 from torch.utils.data import Dataset as TorchDataset
 
-# Configuración
-IMAGE_DIR = "Dataset_BUSI_train"
-OUTPUT_DIR = "predicted_masks"
+# === CONFIGURACIÓN ===
+PREPROC_TAG = "_butterworth"  # Cambia por "_median", "_butterworth", etc.
+PREPROCESSED_DIR = "preprocessed"  # Carpeta donde están las imágenes preprocesadas
+
+GT_MASK_DIR = "Dataset_BUSI_train"  # Ground truth original
+OUTPUT_DIR = f"predicted_masks{PREPROC_TAG}"
+MODEL_PATH = f"unet{PREPROC_TAG}.pt"
+
 IMG_SIZE = (256, 256)
 EPOCHS = 15
 BATCH_SIZE = 2
 USE_CUDA = torch.cuda.is_available()
 
-# Asegurar reproducibilidad
 set_determinism(42)
 
 def get_image_mask_pairs():
     images, masks = [], []
-    for folder in os.listdir(IMAGE_DIR):
-        full_folder = os.path.join(IMAGE_DIR, folder)
-        for path in glob.glob(os.path.join(full_folder, "*.png")):
-            if "_mask" in path:
-                continue
-            base = os.path.splitext(os.path.basename(path))[0]
-            mask_path = os.path.join(full_folder, base + "_mask.png")
+    for filename in os.listdir(PREPROCESSED_DIR):
+        if PREPROC_TAG not in filename or not filename.endswith(".png"):
+            continue
+        base = filename.replace(PREPROC_TAG, "").replace(".png", "")  # quitar sufijo y extensión
+
+        # Buscar máscara en Dataset_BUSI_train
+        for cls in ["benign", "malignant", "normal"]:
+            mask_path = os.path.join(GT_MASK_DIR, cls, f"{base}_mask.png")
             if os.path.exists(mask_path):
-                images.append(path)
+                images.append(os.path.join(PREPROCESSED_DIR, filename))
                 masks.append(mask_path)
+                break
     return images, masks
 
 class BUSIDataset(TorchDataset):
@@ -45,22 +50,28 @@ class BUSIDataset(TorchDataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        img = cv2.imread(self.image_paths[idx], cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(self.image_paths[idx])
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         mask = cv2.imread(self.mask_paths[idx], cv2.IMREAD_GRAYSCALE)
+
+        print(f"[DEBUG] Usando imagen: {self.image_paths[idx]} — Máscara: {self.mask_paths[idx]}")  # 👈 AÑADIDO
 
         img = cv2.resize(img, IMG_SIZE)
         mask = cv2.resize(mask, IMG_SIZE)
 
         img = img.astype(np.float32) / 255.0
-        mask = (mask.astype(np.float32) > 0).astype(np.float32)  # binaria
+        mask = (mask.astype(np.float32) > 0).astype(np.float32)
 
-        img_tensor = torch.tensor(img).unsqueeze(0)   # (1, H, W)
-        mask_tensor = torch.tensor(mask).unsqueeze(0) # (1, H, W)
-
-        return {"img": img_tensor, "seg": mask_tensor}
+        return {
+            "img": torch.tensor(img).unsqueeze(0),    # (1, H, W)
+            "seg": torch.tensor(mask).unsqueeze(0)
+        }
 
 def train_unet():
     images, masks = get_image_mask_pairs()
+    if len(images) == 0:
+        raise ValueError("No se encontraron imágenes preprocesadas con el sufijo especificado.")
+
     dataset = BUSIDataset(images, masks)
     loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
@@ -77,7 +88,6 @@ def train_unet():
 
     loss_fn = DiceLoss(sigmoid=True)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    metric = DiceMetric(include_background=False, reduction="mean")
 
     for epoch in range(EPOCHS):
         model.train()
@@ -96,10 +106,10 @@ def train_unet():
 
         print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {epoch_loss/len(loader):.4f}")
 
-    torch.save(model.state_dict(), "unet_busi.pt")
-    print("\n Modelo UNet entrenado y guardado como 'unet_busi.pt'")
+    torch.save(model.state_dict(), MODEL_PATH)
+    print(f"\n✅ Modelo UNet guardado como '{MODEL_PATH}'")
 
-    # Evaluación visual rápida
+    # Guardar predicciones de muestra
     model.eval()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with torch.no_grad():
@@ -128,5 +138,5 @@ def train_unet():
                 plt.savefig(f"{OUTPUT_DIR}/comparison_{i}_{j}.png")
                 plt.close()
 
-            if i >= 4:  # Solo guardar unas pocas
+            if i >= 4:  # solo guardar algunas muestras
                 break

@@ -2,5 +2,13 @@ preprocessed
 Dataset_BUSI_with_GT
 Dataset_BUSI_train
 predicted_masks
+predicted_masks_first_order
+predicted_masks_second_order
+predicted_masks_median
+predicted_masks_butterworth
 predictions_from_GT
+predictions_from_GT_first_order
+predictions_from_GT_second_order
+predictions_from_GT_median
+predictions_from_GT_butterworth
 __pycache__
