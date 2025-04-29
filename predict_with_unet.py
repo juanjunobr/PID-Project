@@ -33,6 +33,7 @@ def predict_with_gt():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     image_paths = glob.glob(os.path.join(IMAGE_DIR, "**", "*.png"), recursive=True)
+    image_paths = [p for p in image_paths if not p.endswith("_mask.png")]
     print(f"Encontradas {len(image_paths)} imágenes para predecir.")
 
     with torch.no_grad():
@@ -51,8 +52,11 @@ def predict_with_gt():
 
             # Guardar predicción
             filename = os.path.basename(img_path)
+            # Reemplazar espacios y paréntesis
+            filename = filename.replace(" ", "_").replace("(", "").replace(")", "")
             output_path = os.path.join(OUTPUT_DIR, f"mask_{filename}")
             cv2.imwrite(output_path, pred_mask)
+
 
             # Guardar comparación visual
             fig, axs = plt.subplots(1, 2, figsize=(8, 4))
