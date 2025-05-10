@@ -19,7 +19,7 @@ OUTPUT_DIR = f"predicted_masks{PREPROC_TAG}"
 MODEL_PATH = f"unet{PREPROC_TAG}.pt"
 
 IMG_SIZE = (256, 256)
-EPOCHS = 15
+EPOCHS = 30
 BATCH_SIZE = 2
 USE_CUDA = torch.cuda.is_available()
 
