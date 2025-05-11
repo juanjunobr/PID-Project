@@ -1,4 +1,3 @@
-
 \documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
@@ -374,7 +373,7 @@ Esto instalará automáticamente las dependencias necesarias:
 
 \subsection{Cómo utilizar el proyecto}
 
-\subsection{Preprocesamiento de imágenes}
+\subsubsection{Preprocesamiento de imágenes}
 
 Para aplicar los filtros y generar imágenes procesadas, ejecutar:
 
@@ -392,7 +391,7 @@ Esto aplicará:
 
 Los resultados se guardarán en la carpeta de salida especificada.
 
-\subsection{Entrenamiento del modelo U-Net}
+\subsubsection{Entrenamiento del modelo U-Net}
 
 Para entrenar el modelo desde cero, ejecutar:
 
@@ -407,7 +406,7 @@ Este comando:
     \item Guardará el modelo entrenado en el archivo \texttt{unet\_busi.pt}.
 \end{itemize}
 
-\subsection{Predicción con el modelo entrenado}
+\subsubsection{Predicción con el modelo entrenado}
 
 Para realizar predicciones sobre nuevas imágenes:
 
@@ -422,7 +421,7 @@ Esto:
     \item Guardará las máscaras predichas y comparativas visuales.
 \end{itemize}
 
-\subsection{Evaluación de resultados}
+\subsubsection{Evaluación de resultados}
 
 Para evaluar la calidad de las predicciones:
 
@@ -440,14 +439,46 @@ Se calcularán automáticamente las métricas:
     \item Specificity
 \end{itemize}
 
-\subsection{Notas importantes}
+\subsection{Parámetros configurables}
+
+El proyecto puede ajustarse mediante la modificación de ciertos parámetros definidos en el código. Estos son los parámetros más relevantes, su función, valor por defecto, ubicación en el código y consideraciones en caso de que se desee modificarlos:
 
 \begin{itemize}
-    \item Asegurarse de que las rutas de carpetas de entrada y salida estén correctamente configuradas.
-    \item Si se desea modificar parámetros (por ejemplo, número de épocas), deben ajustarse en \texttt{train\_unet\_monai.py}.
-    \item El proyecto detecta automáticamente si hay una GPU disponible.
-    \item Los nombres de archivos deben seguir la convención: las máscaras deben tener el mismo nombre que su imagen asociada, añadiendo "\_mask" al final.
+    \item \textbf{Número de épocas de entrenamiento (EPOCHS)}\\
+    \textit{Archivo:} \texttt{train\_unet\_monai.py} \\
+    \textit{Ubicación:} línea que contiene \texttt{EPOCHS = 30} \\
+    \textit{Descripción:} define el número total de pasadas completas del conjunto de datos por la red neuronal durante el entrenamiento. Aumentarlo puede mejorar la precisión del modelo, pero también incrementa el tiempo de entrenamiento y riesgo de sobreajuste.
+
+    \item \textbf{Tamaño del batch (BATCH\_SIZE)}\\
+    \textit{Archivo:} \texttt{train\_unet\_monai.py} \\
+    \textit{Descripción:} cantidad de imágenes procesadas simultáneamente antes de actualizar los pesos del modelo. Valores mayores pueden acelerar el entrenamiento si se dispone de memoria suficiente en GPU.
+
+    \item \textbf{Tamaño de imagen (IMG\_SIZE)}\\
+    \textit{Archivos:} \texttt{train\_unet\_monai.py}, \texttt{predict\_with\_unet.py} \\
+    \textit{Descripción:} las imágenes de entrada y sus máscaras se redimensionan a este tamaño. Modificarlo puede afectar a la precisión y tiempo de entrenamiento. Por defecto es \texttt{(256, 256)}.
+
+    \item \textbf{Tipo de preprocesamiento (PREPROC\_TAG)}\\
+    \textit{Archivos:} \texttt{train\_unet\_monai.py}, \texttt{predict\_with\_unet.py}, \texttt{metrics\_evaluation.py} \\
+    \textit{Descripción:} cadena que identifica qué tipo de imagen preprocesada se va a utilizar (\texttt{\_butterworth}, \texttt{\_median}, \texttt{\_first\_order}, etc.). Este sufijo debe coincidir con los nombres de archivos de imagen generados.
+
+    \item \textbf{Rutas de entrada y salida} \\
+    \textit{Archivo:} \texttt{main.py} \\
+    \textit{Parámetros:} \texttt{test\_dir}, \texttt{output\_dir}, \texttt{gt\_dir\_root}, \texttt{pred\_dir} \\
+    \textit{Descripción:} determinan dónde buscar las imágenes originales, las máscaras de ground truth y dónde guardar los resultados de las predicciones o evaluaciones.
+
+    \item \textbf{Modo de ejecución} \\
+    \textit{Archivo:} \texttt{main.py} \\
+    \textit{Descripción:} se controla con el valor de la variable \texttt{mode}. Los valores posibles son:
+    \begin{itemize}
+        \item \texttt{"classic"}: aplicar preprocesamiento a todas las imágenes.
+        \item \texttt{"train"}: entrenar el modelo desde cero.
+        \item \texttt{"predict"}: generar predicciones con el modelo entrenado.
+        \item \texttt{"evaluate"}: calcular métricas a partir de predicciones y máscaras reales.
+    \end{itemize}
+    \textit{Nota:} cualquier otro valor provocará un mensaje de error.
 \end{itemize}
+
+\textbf{Recomendación:} antes de modificar cualquier parámetro, se aconseja realizar una copia de seguridad del archivo correspondiente y asegurarse de mantener la coherencia en las rutas y nombres utilizados en distintas fases del proyecto.
 
 
 \section{Conclusiones}
