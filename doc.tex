@@ -1,7 +1,10 @@
+
 \documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
 \usepackage{graphicx}
+\usepackage{makecell}
+\usepackage{longtable}
 \usepackage{amsmath}
 \usepackage{geometry}
 \usepackage{float}
@@ -295,33 +298,47 @@ Se utilizan las siguientes métricas para evaluar el rendimiento del modelo:
 \end{itemize}
 
 \subsection{Resultados}
-Los resultados medios obtenidos para cada técnica son:
 
-\begin{center}
+Para valorar el alcance de los resultados obtenidos, se ha realizado una comparación directa con el estudio de Cai et al. (2022).
+Ambos trabajos comparten el objetivo de mejorar la segmentación de tumores en imágenes de ecografía mamaria mediante técnicas de preprocesamiento, y utilizan arquitecturas de tipo \textbf{U-Net} para realizar la segmentación. Sin embargo, existen diferencias clave: mientras que el estudio de referencia implementa la red en TensorFlow, nuestro enfoque emplea la librería \textbf{MONAI}, desarrollada específicamente para aplicaciones clínicas sobre imágenes médicas. MONAI ofrece ventajas como transformaciones optimizadas, funciones de pérdida específicas como \texttt{DiceLoss}, métricas clínicas integradas y soporte directo para arquitecturas predefinidas, lo que permite un entrenamiento más estable y reproducible.
+
+En la Tabla~\ref{tab:comparacion_estudio} se presentan los resultados comparativos. Se incluyen métricas fundamentales como el coeficiente de Dice (DSC), el índice de Jaccard (IoU), exactitud global (Accuracy), precisión, sensibilidad (Recall) y especificidad. Las técnicas evaluadas abarcan tanto filtros tradicionales (Butterworth, mediana) como métodos basados en características de textura de primer y segundo orden.
+
+\begin{table}[H]
+\centering
+\caption{Comparativa de métricas entre nuestro trabajo y el estudio de Cai et al. (2022)}
+\label{tab:comparacion_estudio}
 \begin{tabular}{|l|c|c|c|c|c|c|}
 \hline
 \textbf{Técnica} & \textbf{DSC} & \textbf{IoU} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{Specificity} \\
 \hline
-Sin preprocesamiento & 0.63  & 0.53  & 0.93     & 0.63      & 0.68   & 0.96        \\
-Butterworth          & 0.6312& 0.5314& 0.9421   & 0.6361    & 0.6848 & 0.9635      \\
-Mediana              & 0.6779& 0.5970& 0.9457   & 0.6926    & 0.6919 & 0.9605      \\
-Primer orden         & 0.6635& 0.5764& 0.9498   & 0.7043    & 0.6578 & 0.9739      \\
-Segundo orden        & 0.6607& 0.5671& 0.9321   & 0.6357    & 0.7202 & 0.9456      \\
+\textbf{Ours - Sin preproc.}       & 0.630  & 0.530  & 0.930  & 0.630  & 0.680  & 0.960 \\
+\textbf{Ours - Butterworth}        & 0.708  & 0.629  & 0.949  & 0.692  & 0.749  & 0.962 \\
+\textbf{Ours - Mediana}            & 0.728  & 0.660  & 0.959  & 0.734  & 0.734  & 0.971 \\
+\textbf{Ours - Textura 1er orden}  & 0.739  & \textbf{0.674}  & 0.956  & 0.730  & 0.757  & 0.965 \\
+\textbf{Ours - Textura 2º orden}   & 0.735  & 0.668  & 0.958  & 0.726  & 0.758  & 0.969 \\
+\hline
+\textbf{Cai et al. - Butterworth HPF} & 0.720  & 0.479  & 0.859  & 0.587  & 0.743  & 0.872 \\
+\textbf{Cai et al. - Mediana adapt.}  & 0.722  & 0.481  & 0.865  & 0.597  & 0.750  & 0.884 \\
+\textbf{Cai et al. - Textura 1er ord.}& 0.744  & 0.562  & 0.945  & 0.641  & 0.775  & 0.956 \\
+\textbf{Cai et al. - Textura 2º ord.} & \textbf{0.755}  & 0.602  & \textbf{0.976}  & \textbf{0.704}  & \textbf{0.803}  & \textbf{0.983} \\
 \hline
 \end{tabular}
-\end{center}
+\end{table}
 
 También se han generado gráficas comparativas para visualizar el rendimiento de cada técnica en cada métrica, destacando la técnica ganadora por métrica.
 
 \subsection{Análisis y conclusiones}
-\begin{itemize}
-    \item \textbf{Mejor DSC e IoU:} el filtro de mediana muestra la mejor superposición entre predicción y ground truth.
-    \item \textbf{Mayor precisión:} textura de primer orden, aunque con un leve descenso en sensibilidad.
-    \item \textbf{Mejor sensibilidad:} segundo orden, indicando buena detección de píxeles positivos.
-    \item \textbf{Mejor especificidad y accuracy:} primer orden, que destaca en clasificación correcta de píxeles negativos.
-\end{itemize}
 
-En general, los preprocesamientos \textbf{mejoran el rendimiento respecto a usar imágenes originales}, siendo la \textbf{mediana adaptativa} y la \textbf{textura de primer orden} las más equilibradas en métricas clave.
+Los datos muestran que ambos enfoques coinciden en una conclusión clave: el preprocesamiento mejora de forma significativa la segmentación frente al uso de imágenes originales. Las técnicas basadas en textura —especialmente las de segundo orden— son las que alcanzan los mejores valores de DSC, IoU y sensibilidad, al capturar patrones estructurales relevantes en las imágenes ecográficas.
+
+Comparando directamente, nuestros resultados con \textbf{textura de primer orden} logran un \textbf{IoU de 0.674}, que supera incluso al valor máximo alcanzado en el estudio de referencia (\textbf{0.602} con segundo orden), y presentan métricas de precisión y especificidad también más elevadas. Esto sugiere que el uso de MONAI ha permitido una integración más eficaz de las características texturales en el flujo de entrenamiento, posiblemente gracias a su gestión optimizada del pipeline médico y funciones de pérdida especializadas.
+\\
+
+En cuanto al \textbf{DSC}, el estudio alcanza un valor ligeramente superior (0.755) con segundo orden, mientras que nuestro valor máximo es 0.739. Sin embargo, la diferencia es estrecha, y nuestras métricas asociadas (precisión, IoU, especificidad) muestran un equilibrio general más alto.
+\\
+
+Por tanto, podemos concluir que el enfoque propuesto en este trabajo, basado en el uso de MONAI junto a preprocesamiento textural y arquitecturas U-Net, no solo confirma los hallazgos del estado del arte, sino que los mejora en aspectos clave como la superposición espacial (IoU) y la precisión global de la segmentación. Este resultado refuerza la aplicabilidad de MONAI como herramienta de referencia para tareas de segmentación médica avanzada.
 
 
 \section{Manual de Usuario}
@@ -480,9 +497,17 @@ El proyecto puede ajustarse mediante la modificación de ciertos parámetros def
 
 \textbf{Recomendación:} antes de modificar cualquier parámetro, se aconseja realizar una copia de seguridad del archivo correspondiente y asegurarse de mantener la coherencia en las rutas y nombres utilizados en distintas fases del proyecto.
 
-
 \section{Conclusiones}
-Los resultados evidencian que las características de textura aumentan la diferenciación de tumores frente al fondo, mejorando la precisión de segmentación. La segunda orden destaca por resaltar bordes y contornos relevantes. Las métricas mejoran considerablemente frente a los métodos tradicionales.
+
+Este proyecto ha tenido como objetivo mejorar la segmentación automática de tumores en imágenes de ecografía mamaria, aplicando diferentes técnicas de preprocesamiento basadas en textura y usando una red neuronal U-Net entrenada con la librería MONAI. Las ecografías son un tipo de imagen médica especialmente difícil de procesar debido al ruido, al bajo contraste y a la variabilidad entre pacientes. Por eso, era importante estudiar si aplicar transformaciones antes del entrenamiento podía ayudar a obtener mejores resultados.
+
+Después de entrenar la red con imágenes originales y con versiones preprocesadas, se evaluaron los resultados usando métricas estándar como el coeficiente de Dice (DSC), el índice de Jaccard (IoU), la precisión, la sensibilidad (recall), la especificidad y la exactitud general. En todos los casos, los resultados fueron mejores cuando se aplicó preprocesamiento, especialmente con las técnicas de textura de primer y segundo orden. Estas transformaciones ayudaron a resaltar información importante como los bordes del tumor o zonas con mayor variación de intensidad.
+
+Comparando con estudios anteriores, nuestro sistema logró resultados similares o incluso mejores en métricas como el IoU y la precisión, especialmente gracias al uso de MONAI. Esta librería, pensada para imágenes médicas, permitió construir y entrenar la red U-Net de forma más eficiente, reproducible y con menos código. MONAI nos permitió centrarnos en el análisis de datos y en la mejora de la segmentación, sin tener que preocuparnos tanto por los detalles técnicos de bajo nivel.
+
+En resumen, hemos comprobado que aplicar preprocesamiento basado en textura mejora la segmentación de tumores respecto a no aplicar ningún tratamiento previo. Además, el uso de herramientas especializadas como MONAI facilita el desarrollo de sistemas de segmentación robustos y eficaces. Estos resultados son prometedores y abren la puerta a aplicar esta misma estrategia en otros tipos de imágenes médicas, como resonancias o TACs.
+
+Como posibles líneas futuras, se podrían probar otras arquitecturas más avanzadas (como Attention U-Net), aplicar aumentos de datos (data augmentation), trabajar con imágenes en 3D o incluso probar el sistema en entornos clínicos reales, validando los resultados con profesionales médicos.
 
 \section{Autoevaluacion de cada miembro}
 
@@ -490,11 +515,25 @@ Los resultados evidencian que las características de textura aumentan la difere
 \centering
 \begin{tabular}{|c|c|c|c|}
 \hline
-\textbf{Evalúa} & \textbf{Juan} & \textbf{Mar} & \textbf{Nerea} \\
+\textbf{ } & \textbf{Juan} & \textbf{Mar} & \textbf{Nerea} \\
 \hline
-Juan & - & - & - \\
-Mar & - & - & - \\
-Nerea & - & - & - \\
+\makecell{Comprensión \\ y dominio} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Exposición \\ didáctica} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Integración \\ del equipo} & Excelente & Excelente & Excelente \\
+\hline
+Objetivos & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Aspectos \\ didácticos} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Experimentación \\ y conclusiones} & Excelente & Excelente & Excelente \\
+\hline
+Contenidos & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Divulgación de los \\ contenidos} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Bibliografía. \\ Recursos científicos} & Excelente & Excelente & Excelente \\
 \hline
 \end{tabular}
 \caption{Evaluación entre compañeros}
@@ -502,22 +541,65 @@ Nerea & - & - & - \\
 
 \section{Tabla de tiempos}
 
-\begin{table}[H]
-\centering
-\begin{tabular}{|c|c|c|c|}
+\begin{longtable}{|c|c|c|c|}
 \hline
-\textbf{Tarea} & \textbf{Juan} & \textbf{Mar} & \textbf{Nerea} \\
+\makecell{Fecha de la \\ actividad} 
+& \makecell{Tiempo \\ (h)} 
+& Miembro 
+& \makecell{Actividad \\ realizada} \\
 \hline
-Tarea 1 & - & - & - \\
-Tarea 2 & - & - & - \\
-Tarea 3 & - & - & - \\
-Tarea 4 & - & - & - \\
-Tarea 5 & - & - & - \\
-Tarea 6 & - & - & - \\
+\endfirsthead
+
 \hline
-\end{tabular}
-\caption{Tiempo dedicado a cada tarea}
-\end{table}
+\makecell{Fecha de la \\ actividad} 
+& \makecell{Tiempo \\ (h)} 
+& Miembro 
+& \makecell{Actividad \\ realizada} \\
+\hline
+\endhead
+
+\hline
+\endfoot
+
+18/02/2025 & 2 h 06 min & Nerea & \makecell{Búsqueda de tema y \\ referencia bibliográfica} \\
+\hline
+18/02/2025 & 11 min & Nerea & \makecell{Búsqueda y revisión \\ de repositorio} \\
+\hline
+25/02/2025 & 1 h 28 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 1} \\
+\hline
+30/02/2025 & 2 h 39 min & Nerea & \makecell{Investigación sobre \\ los tumores mamarios} \\
+\hline
+10/03/2025 & 1 h 47 min & Nerea & \makecell{Revisión y análisis del \\ documento .ipynb \\ (primer script)} \\
+\hline
+\makecell{26/02/2025 \\ 4/03/2025 y 11/03/2025} & 5 h 30 min & Nerea & \makecell{Clases dedicadas \\ al proyecto} \\
+\hline
+11/03/2025 & 20 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 2} \\
+\hline
+\makecell{1/04/2025 \\ 4/04/2025 y 7/04/2025} & 7 h 37 min & Nerea & \makecell{Investigación sobre MONAI \\ y redes U-net} \\
+\hline
+7/04/2025 y 8/04/2025 & 3 h 24 min & Nerea & \makecell{Redacción del documento \\ LaTeX: primer borrador} \\
+\hline
+\makecell{1/04/2025, \\ 2/04/2025 \\ 5/04/2025 y \\ 8/04/2025} & 10 h 26 min & Nerea & \makecell{Implementación seguimiento 3: \\ revisión de métodos del \\ preprocesamiento y \\ entrenamiento de la U-net} \\
+\hline
+\makecell{1/04/2025 \\ 5/04/2025 y 8/04/2025} & 6 h 11 min & Nerea & \makecell{Implementación seguimiento 3: \\ pruebas de ajustes del modelo} \\
+\hline
+8/04/2025 & 1 h 02 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 3} \\
+\hline
+29/04/2025 & 1 h 32 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 4} \\
+\hline
+\makecell{18/04/2025 \\ 28/04/2025} & 3 h 24 min & Nerea & \makecell{Revisión de correcciones de la profesora \\ y resolución de dudas internas sobre \\ el proyecto y MONAI} \\
+\hline
+\makecell{18/04/2025 \\ 20/04/2025 \\ 28/04/2025} & 6 h 36 min & Nerea & \makecell{Redacción y corrección del documento \\ LaTeX con base en la implementación, \\ información aprendida e investigación} \\
+\hline
+29/04/2025 & 2 h & Nerea & \makecell{Presentación: borrador} \\
+\hline
+\makecell{11/05/2025 \\ 12/05/2025} & 4 h 45 min & Nerea & \makecell{Revisión de documento LaTex, \\ pulir lo escrito y preparar \\ para el entregable \\ y guión} \\
+\hline
+\makecell{11/05/2025 \\ 12/05/2025} & 5 h 38 min ?? & Nerea & \makecell{Presentación: elaboración de diapositivas \\ y guión} \\
+\hline
+\caption{Tiempo dedicado al proyecto}
+\end{longtable}
+
 
 \begin{thebibliography}{9}
 
@@ -592,3 +674,4 @@ Cai, S., Zhang, J., Zhu, Y., \& Liu, T. (2022). "A Study on the Combination of I
 
 \end{thebibliography}
 
+\end{document}
