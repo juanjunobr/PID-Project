@@ -82,21 +82,6 @@ La arquitectura \textbf{U-Net} fue diseñada específicamente para segmentación
 
 Un elemento clave son las \textbf{conexiones de salto} (\textit{skip connections}), que copian los mapas de características del encoder y los concatenan con los del decoder en cada nivel. Esto permite recuperar detalles finos que se habrían perdido en el proceso de compresión, logrando una segmentación precisa, especialmente en bordes y estructuras pequeñas como los tumores.
 
-\subsection*{Configuración Específica de U-Net empleada en el Proyecto}
-El modelo se construye con la clase \texttt{UNet} de la librería MONAI, \cite{monai_unet, monai_dice_loss}con la siguiente configuración: 
-
-\begin{itemize}
-  \item \textbf{Espacio 2D}: \texttt{spatial\_dims=2}, adecuado para imágenes planas.
-  \item \textbf{Canales}: Imagen de entrada en escala de grises (\texttt{in\_channels=1}) y salida binaria (\texttt{out\_channels=1}).
-  \item \textbf{Estructura de capas}: Cuatro niveles con \texttt{channels=(16, 32, 64, 128)} y \texttt{strides=(2,2,2)} para reducir resolución.
-  \item \textbf{Bloques residuales}: Se emplean bloques de dos convoluciones por nivel (\texttt{num\_res\_units=2}) que mejoran la estabilidad del entrenamiento.
-  \item \textbf{Activaciones}: ReLU en capas intermedias; sigmoide al final para producir probabilidades píxel a píxel.
-  \item \textbf{Función de pérdida}: \texttt{DiceLoss} con activación sigmoide incorporada.
-  \item \textbf{Entrenamiento}: 15 épocas, batch size 2, optimizador Adam, con imágenes redimensionadas a 256x256 píxeles.
-\end{itemize}
-
-Este modelo, entrenado con imágenes del dataset BUSI y sus respectivas máscaras, se guarda como \texttt{unet\_busi.pt} y luego puede utilizarse para segmentar nuevas ecografías. La arquitectura, gracias a su simetría y al uso de conexiones de salto, ofrece segmentaciones precisas incluso en imágenes complejas y ruidosas como las ecografías mamarias.
-
 \subsection{Esquema del pipeline general}
 A continuación se presenta el flujo de trabajo general del sistema:
 \begin{center}
