@@ -2,13 +2,17 @@
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
 \usepackage{graphicx}
+\usepackage{makecell}
+\usepackage{longtable}
 \usepackage{amsmath}
 \usepackage{geometry}
 \usepackage{float}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{hyperref}
+\usepackage{tikz}
 \usepackage{listings}
+\usetikzlibrary{positioning}
 \geometry{margin=2.5cm}
 
 \title{Preprocesamiento Basado en Textura para la Segmentación de Tumores en Ecografías Mamarias con MONAI}
@@ -20,17 +24,19 @@
 \maketitle
 
 \begin{abstract}
-El resumen se hace al final del trabajo
+En este trabajo se propone una forma de mejorar la detección automática de tumores en ecografías mamarias, utilizando técnicas de preprocesamiento y redes neuronales. Las ecografías son imágenes que pueden tener mucho ruido y poco contraste, lo que hace difícil que un modelo detecte tumores. Para solucionar esto, antes de entrenar la red neuronal, se aplican distintos métodos de mejora de imagen. Después, estas imágenes se procesan con una red neuronal llamada U-Net, muy utilizada en medicina para separar automáticamente regiones de interés en una imagen.
+
+Todo el sistema se ha implementado con la ayuda de MONAI, una librería especializada en imágenes médicas. Se ha utilizado un conjunto real de imágenes de mama (el dataset BUSI) y se han probado diferentes versiones del modelo: con imágenes originales, con filtros y con texturas. Los resultados muestran que aplicar estas técnicas de mejora antes del entrenamiento permite al modelo hacer predicciones más precisas. Esto demuestra que el preprocesamiento puede ser una herramienta clave para mejorar los sistemas de diagnóstico por imagen.
 \end{abstract}
 
-\textbf{Palabras clave:} segmentación, MONAI, características de textura, U-Net, preprocesamiento, ecografía mamaria.
+\textbf{Palabras clave:} segmentación automática, ecografía mamaria, U-Net, MONAI, preprocesamiento de imágenes, aprendizaje profundo.
 
 \section{Introducción}
 El cáncer de mama representa una de las principales causas de mortalidad femenina. La segmentación precisa de tumores en imágenes de ecografía mamaria es esencial para el diagnóstico asistido por computadora. Sin embargo, estas imágenes presentan artefactos, bajo contraste y ruido speckle que dificultan la segmentación automática. Este trabajo propone comparar métodos de preprocesamiento tradicionales y texturales para mejorar la calidad de segmentación utilizando una red U-Net.
 
 \section{Planteamiento Teórico}
 
-La inteligencia artificial ha transformado numerosas disciplinas, y la medicina no es la excepción. En particular, la segmentación automática de imágenes médicas se ha vuelto una herramienta de gran valor en el diagnóstico clínico. Este proyecto se centra en el preprocesamiento y la segmentación de tumores en ecografías mamarias utilizando una red neuronal llamada U-Net, entrenada con ayuda de la librería especializada MONAI.
+La inteligencia artificial ha transformado numerosas disciplinas, y la medicina no es la excepción. \cite{litjens2017survey} En particular, la segmentación automática de imágenes médicas se ha vuelto una herramienta de gran valor en el diagnóstico clínico. Este proyecto se centra en el preprocesamiento y la segmentación de tumores en ecografías mamarias utilizando una red neuronal llamada U-Net, entrenada con ayuda de la librería especializada MONAI.
 
 \subsection{Preprocesamiento}
 
@@ -43,26 +49,27 @@ En concreto y en el ámbito que nos compete, las imágenes médicas presentan nu
 
   \item \textbf{Normalización de intensidades:} La normalización consiste en escalar los valores de intensidad de píxel a un rango común, como [0,1]. Esto mejora la estabilidad y la eficiencia del entrenamiento del modelo, ya que reduce la variabilidad entre imágenes. Comúnmente se utiliza la normalización min-max o la estandarización basada en media y desviación estándar.
 
-  \item \textbf{Filtro Butterworth:} El filtro Butterworth es un filtro frecuencial que puede funcionar como pasa-bajos o pasa-altos. Su principal ventaja es que proporciona una transición suave en la frecuencia de corte, evitando artefactos bruscos. El filtro pasa-bajos suaviza la imagen eliminando el ruido de alta frecuencia, mientras que el pasa-altos resalta los bordes. La forma matemática del filtro asegura que no haya una caída abrupta, manteniendo una transición gradual.
+  \item \textbf{Filtro Butterworth:} El filtro Butterworth es un filtro frecuencial \cite{mathworks_butterworth} que puede funcionar como pasa-bajos o pasa-altos. Su principal ventaja es que proporciona una transición suave en la frecuencia de corte, evitando artefactos bruscos. El filtro pasa-bajos suaviza la imagen eliminando el ruido de alta frecuencia, mientras que el pasa-altos resalta los bordes. La forma matemática del filtro asegura que no haya una caída abrupta, manteniendo una transición gradual.
 
-  \item \textbf{Filtro de mediana adaptativa:} Este filtro elimina eficazmente el ruido impulsivo (sal y pimienta) adaptando dinámicamente el tamaño de la ventana de filtrado. Si una ventana pequeña no es suficiente para identificar correctamente la mediana de los píxeles, el filtro aumenta el tamaño de la ventana hasta encontrar una mediana adecuada. Así, preserva los bordes y detalles mientras elimina el ruido localizado.
+  \item \textbf{Filtro de mediana adaptativa:} Este filtro elimina eficazmente el ruido impulsivo (sal y pimienta) adaptando dinámicamente el tamaño de la ventana de filtrado. Si una ventana pequeña no es suficiente para identificar correctamente la mediana de los píxeles, el filtro aumenta el tamaño de la ventana hasta encontrar una mediana adecuada. Así, preserva los bordes y detalles mientras elimina el ruido localizado. \cite{scribd_median_filter}
 
-  \item \textbf{Características estadísticas de primer orden:} Estas características describen la distribución de las intensidades de los píxeles de forma individual, sin considerar su posición. Incluyen métricas como la media, varianza, asimetría, curtosis y entropía. Estas propiedades permiten caracterizar la luminosidad y el contraste general de la imagen.
+  \item \textbf{Características estadísticas de primer orden:} Estas características describen la distribución de las intensidades de los píxeles de forma individual, sin considerar su posición. Incluyen métricas como la media, varianza, asimetría, curtosis y entropía.\cite{haralick1973} Estas propiedades permiten caracterizar la luminosidad y el contraste general de la imagen.
 
-  \item \textbf{Características estadísticas de segundo orden:} Se enfocan en las relaciones espaciales entre los píxeles. Se obtienen, por ejemplo, mediante la matriz de co-ocurrencia de niveles de gris (GLCM), que mide con qué frecuencia aparecen combinaciones de valores de gris a cierta distancia y dirección. A partir de esta matriz se calculan métricas como contraste, homogeneidad, energía y correlación, que describen patrones de textura en la imagen.
+  \item \textbf{Características estadísticas de segundo orden:} Se enfocan en las relaciones espaciales entre los píxeles. Se obtienen, por ejemplo, mediante la matriz de co-ocurrencia de niveles de gris (GLCM),\cite{haralick1973} que mide con qué frecuencia aparecen combinaciones de valores de gris a cierta distancia y dirección. A partir de esta matriz se calculan métricas como contraste, homogeneidad, energía y correlación, que describen patrones de textura en la imagen.
 \end{itemize}
 
 \subsection{Redes Neuronales Convolucionales (CNN)} 
-Una \textbf{red neuronal convolucional} (o \textit{Convolutional Neural Network}, CNN) es un tipo de red de aprendizaje profundo especialmente adecuada para procesar imágenes. A diferencia de las redes totalmente conectadas, las CNN emplean \textit{capas convolucionales} que aplican filtros sobre la imagen para extraer automáticamente características locales (por ejemplo, bordes, texturas) y \textit{capas de pooling} para reducir la resolución espacial, preservando las características más relevantes. Esto permite aprender representaciones jerárquicas: las primeras capas detectan patrones simples y las más profundas combinan estas características en patrones complejos propios del contenido de la imagen. En resumen, una CNN es una arquitectura capaz de \textbf{aprender directamente a partir de los datos} de imagen, identificando patrones visuales útiles para la tarea dada.
+Una \textbf{red neuronal convolucional} (o \textit{Convolutional Neural Network}, CNN) es un tipo de red de aprendizaje profundo especialmente adecuada para procesar imágenes. A diferencia de las redes totalmente conectadas, las CNN emplean \textit{capas convolucionales} que aplican filtros sobre la imagen para extraer automáticamente características locales (por ejemplo, bordes, texturas) y \textit{capas de pooling} para reducir la resolución espacial, preservando las características más relevantes. Esto permite aprender representaciones jerárquicas: las primeras capas detectan patrones simples y las más profundas combinan estas características en patrones complejos propios del contenido de la imagen. En resumen, una CNN es una arquitectura capaz de \textbf{aprender directamente a partir de los datos} de imagen, identificando patrones visuales útiles para la tarea dada.\cite{goodfellow2016deep}
 
 En nuestro proyecto se utiliza una CNN para llevar a cabo la segmentación automática de tumores en ecografías mamarias. La red convolucional aprende a reconocer, píxel a píxel, qué regiones de la imagen corresponden a tejido tumoral y cuáles a tejido normal o fondo, a partir de ejemplos anotados. Gracias a las convoluciones, la red puede detectar las características visuales sutiles de un tumor en una ecografía (como variaciones de textura o bordes difusos). Este enfoque automatizado reemplaza la necesidad de definir manualmente criterios de segmentación, permitiendo que el modelo ``aprenda'' a partir de los datos.
 
 \subsection*{Segmentación Semántica en Ecografías Mamarias}  
-La \textbf{segmentación semántica} es una tarea de visión por computador que consiste en asignar una etiqueta de clase a cada píxel de una imagen mediante un algoritmo de aprendizaje profundo. En otras palabras, el resultado es una máscara donde cada píxel está clasificado como perteneciente a cierta categoría. En nuestro caso, trabajamos con una segmentación binaria: cada píxel de la ecografía se clasifica como “tumor” o “no tumor”.
+La \textbf{segmentación semántica} es una tarea de visión por computador que consiste en asignar una etiqueta de clase a cada píxel de una imagen mediante un algoritmo de aprendizaje profundo. En otras palabras, el resultado es una máscara donde cada píxel está clasificado como perteneciente a cierta categoría. En nuestro caso, trabajamos con una segmentación binaria: cada píxel de la ecografía se clasifica como “tumor” o “no tumor”.\cite{ronneberger2015unet}
+
 
 Aplicada a \textbf{ecografías mamarias}, permite delimitar de forma precisa las lesiones tumorales en imágenes de ultrasonido. Estas imágenes suelen tener bajo contraste y presencia de ruido, lo que dificulta su interpretación. Mediante segmentación automática, el sistema aprende de ejemplos anotados a identificar patrones propios de los tumores. El resultado es una máscara que marca su ubicación y forma, lo cual puede acelerar y mejorar el diagnóstico clínico.
 
-Para evaluar la calidad de la segmentación, el proyecto implementa métricas como el \textit{coeficiente de Dice} (DSC) y el \textit{Índice de Jaccard} (IoU), calculadas en el archivo \texttt{metrics\_evaluation.py}. Estas métricas comparan la superposición entre la predicción del modelo y la máscara real.
+Para evaluar la calidad de la segmentación, el proyecto implementa métricas como el \textit{coeficiente de Dice} (DSC) y el \textit{Índice de Jaccard} (IoU), calculadas en el archivo \texttt{metrics\_evaluation.py}. Estas métricas comparan la superposición entre la predicción del modelo y la máscara real. \cite{taha2015metrics}
 
 \subsection*{Arquitectura U-Net: Codificación, Decodificación y Conexiones de Salto}  
 La arquitectura \textbf{U-Net} fue diseñada específicamente para segmentación de imágenes médicas. Tiene una forma en “U” compuesta por dos fases:
@@ -75,7 +82,7 @@ La arquitectura \textbf{U-Net} fue diseñada específicamente para segmentación
 Un elemento clave son las \textbf{conexiones de salto} (\textit{skip connections}), que copian los mapas de características del encoder y los concatenan con los del decoder en cada nivel. Esto permite recuperar detalles finos que se habrían perdido en el proceso de compresión, logrando una segmentación precisa, especialmente en bordes y estructuras pequeñas como los tumores.
 
 \subsection*{Configuración Específica de U-Net empleada en el Proyecto}
-El modelo se construye con la clase \texttt{UNet} de la librería MONAI, con la siguiente configuración:
+El modelo se construye con la clase \texttt{UNet} de la librería MONAI, \cite{monai_unet, monai_dice_loss}con la siguiente configuración: 
 
 \begin{itemize}
   \item \textbf{Espacio 2D}: \texttt{spatial\_dims=2}, adecuado para imágenes planas.
@@ -89,17 +96,24 @@ El modelo se construye con la clase \texttt{UNet} de la librería MONAI, con la 
 
 Este modelo, entrenado con imágenes del dataset BUSI y sus respectivas máscaras, se guarda como \texttt{unet\_busi.pt} y luego puede utilizarse para segmentar nuevas ecografías. La arquitectura, gracias a su simetría y al uso de conexiones de salto, ofrece segmentaciones precisas incluso en imágenes complejas y ruidosas como las ecografías mamarias.
 
-\subsection*{Framework MONAI}
-MONAI (Medical Open Network for AI) es una librería desarrollada para facilitar la implementación de modelos de aprendizaje profundo en el campo de la medicina. Extiende las funcionalidades de PyTorch con herramientas especializadas, incluyendo:
+\subsection{Esquema del pipeline general}
+A continuación se presenta el flujo de trabajo general del sistema:
+\begin{center}
+\begin{tikzpicture}[node distance=1.6cm, every node/.style={draw, text width=5cm, minimum height=1.2cm, align=center}, ->, >=stealth]
+  \node (input) {Imagen original};
+  \node (prep) [below=of input, fill=orange!20] {Preprocesamiento: filtros y texturas};
+  \node (proc) [below=of prep] {Imagen procesada};
+  \node (unet) [below=of proc, fill=yellow!20] {Red neuronal U-Net (entrenamiento o inferencia)};
+  \node (mask) [below=of unet] {Máscara segmentada};
+  \node (eval) [below=of mask, fill=purple!20] {Evaluación con métricas: Dice, IoU, etc.};
 
-\begin{itemize}
-    \item Transformaciones específicas para imágenes médicas (carga de datos, normalización, redimensionamiento).
-    \item Modelos predefinidos como U-Net, V-Net y otros.
-    \item Funciones de pérdida y métricas de evaluación adaptadas a segmentación.
-    \item Integración con formatos de imagen médica (DICOM, NIfTI).
-\end{itemize}
-
-Gracias a MONAI, el desarrollo de este proyecto se beneficia de un entorno robusto y reproducible, permitiendo un enfoque modular y escalable para el tratamiento de imágenes médicas.
+  \draw (input) -- (prep);
+  \draw (prep) -- (proc);
+  \draw (proc) -- (unet);
+  \draw (unet) -- (mask);
+  \draw (mask) -- (eval);
+\end{tikzpicture}
+\end{center}
 
 
 
@@ -295,33 +309,47 @@ Se utilizan las siguientes métricas para evaluar el rendimiento del modelo:
 \end{itemize}
 
 \subsection{Resultados}
-Los resultados medios obtenidos para cada técnica son:
 
-\begin{center}
+Para valorar el alcance de los resultados obtenidos, se ha realizado una comparación directa con el estudio de Cai et al. (2022).
+Ambos trabajos comparten el objetivo de mejorar la segmentación de tumores en imágenes de ecografía mamaria mediante técnicas de preprocesamiento, y utilizan arquitecturas de tipo \textbf{U-Net} para realizar la segmentación. Sin embargo, existen diferencias clave: mientras que el estudio de referencia implementa la red en TensorFlow, nuestro enfoque emplea la librería \textbf{MONAI}, desarrollada específicamente para aplicaciones clínicas sobre imágenes médicas. MONAI ofrece ventajas como transformaciones optimizadas, funciones de pérdida específicas como \texttt{DiceLoss}, métricas clínicas integradas y soporte directo para arquitecturas predefinidas, lo que permite un entrenamiento más estable y reproducible.
+
+En la Tabla~\ref{tab:comparacion_estudio} se presentan los resultados comparativos. Se incluyen métricas fundamentales como el coeficiente de Dice (DSC), el índice de Jaccard (IoU), exactitud global (Accuracy), precisión, sensibilidad (Recall) y especificidad. Las técnicas evaluadas abarcan tanto filtros tradicionales (Butterworth, mediana) como métodos basados en características de textura de primer y segundo orden.
+
+\begin{table}[H]
+\centering
+\caption{Comparativa de métricas entre nuestro trabajo y el estudio de Cai et al. (2022)}
+\label{tab:comparacion_estudio}
 \begin{tabular}{|l|c|c|c|c|c|c|}
 \hline
 \textbf{Técnica} & \textbf{DSC} & \textbf{IoU} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{Specificity} \\
 \hline
-Sin preprocesamiento & 0.63  & 0.53  & 0.93     & 0.63      & 0.68   & 0.96        \\
-Butterworth          & 0.6312& 0.5314& 0.9421   & 0.6361    & 0.6848 & 0.9635      \\
-Mediana              & 0.6779& 0.5970& 0.9457   & 0.6926    & 0.6919 & 0.9605      \\
-Primer orden         & 0.6635& 0.5764& 0.9498   & 0.7043    & 0.6578 & 0.9739      \\
-Segundo orden        & 0.6607& 0.5671& 0.9321   & 0.6357    & 0.7202 & 0.9456      \\
+\textbf{Ours - Sin preproc.}       & 0.630  & 0.530  & 0.930  & 0.630  & 0.680  & 0.960 \\
+\textbf{Ours - Butterworth}        & 0.708  & 0.629  & 0.949  & 0.692  & 0.749  & 0.962 \\
+\textbf{Ours - Mediana}            & 0.728  & 0.660  & 0.959  & 0.734  & 0.734  & 0.971 \\
+\textbf{Ours - Textura 1er orden}  & 0.739  & \textbf{0.674}  & 0.956  & 0.730  & 0.757  & 0.965 \\
+\textbf{Ours - Textura 2º orden}   & 0.735  & 0.668  & 0.958  & 0.726  & 0.758  & 0.969 \\
+\hline
+\textbf{Cai et al. - Butterworth HPF} & 0.720  & 0.479  & 0.859  & 0.587  & 0.743  & 0.872 \\
+\textbf{Cai et al. - Mediana adapt.}  & 0.722  & 0.481  & 0.865  & 0.597  & 0.750  & 0.884 \\
+\textbf{Cai et al. - Textura 1er ord.}& 0.744  & 0.562  & 0.945  & 0.641  & 0.775  & 0.956 \\
+\textbf{Cai et al. - Textura 2º ord.} & \textbf{0.755}  & 0.602  & \textbf{0.976}  & \textbf{0.704}  & \textbf{0.803}  & \textbf{0.983} \\
 \hline
 \end{tabular}
-\end{center}
+\end{table}
 
 También se han generado gráficas comparativas para visualizar el rendimiento de cada técnica en cada métrica, destacando la técnica ganadora por métrica.
 
 \subsection{Análisis y conclusiones}
-\begin{itemize}
-    \item \textbf{Mejor DSC e IoU:} el filtro de mediana muestra la mejor superposición entre predicción y ground truth.
-    \item \textbf{Mayor precisión:} textura de primer orden, aunque con un leve descenso en sensibilidad.
-    \item \textbf{Mejor sensibilidad:} segundo orden, indicando buena detección de píxeles positivos.
-    \item \textbf{Mejor especificidad y accuracy:} primer orden, que destaca en clasificación correcta de píxeles negativos.
-\end{itemize}
 
-En general, los preprocesamientos \textbf{mejoran el rendimiento respecto a usar imágenes originales}, siendo la \textbf{mediana adaptativa} y la \textbf{textura de primer orden} las más equilibradas en métricas clave.
+Los datos muestran que ambos enfoques coinciden en una conclusión clave: el preprocesamiento mejora de forma significativa la segmentación frente al uso de imágenes originales. Las técnicas basadas en textura —especialmente las de segundo orden— son las que alcanzan los mejores valores de DSC, IoU y sensibilidad, al capturar patrones estructurales relevantes en las imágenes ecográficas.
+
+Comparando directamente, nuestros resultados con \textbf{textura de primer orden} logran un \textbf{IoU de 0.674}, que supera incluso al valor máximo alcanzado en el estudio de referencia (\textbf{0.602} con segundo orden), y presentan métricas de precisión y especificidad también más elevadas. Esto sugiere que el uso de MONAI ha permitido una integración más eficaz de las características texturales en el flujo de entrenamiento, posiblemente gracias a su gestión optimizada del pipeline médico y funciones de pérdida especializadas.
+\\
+
+En cuanto al \textbf{DSC}, el estudio alcanza un valor ligeramente superior (0.755) con segundo orden, mientras que nuestro valor máximo es 0.739. Sin embargo, la diferencia es estrecha, y nuestras métricas asociadas (precisión, IoU, especificidad) muestran un equilibrio general más alto.
+\\
+
+Por tanto, podemos concluir que el enfoque propuesto en este trabajo, basado en el uso de MONAI junto a preprocesamiento textural y arquitecturas U-Net, no solo confirma los hallazgos del estado del arte, sino que los mejora en aspectos clave como la superposición espacial (IoU) y la precisión global de la segmentación. Este resultado refuerza la aplicabilidad de MONAI como herramienta de referencia para tareas de segmentación médica avanzada.
 
 
 \section{Manual de Usuario}
@@ -480,9 +508,17 @@ El proyecto puede ajustarse mediante la modificación de ciertos parámetros def
 
 \textbf{Recomendación:} antes de modificar cualquier parámetro, se aconseja realizar una copia de seguridad del archivo correspondiente y asegurarse de mantener la coherencia en las rutas y nombres utilizados en distintas fases del proyecto.
 
-
 \section{Conclusiones}
-Los resultados evidencian que las características de textura aumentan la diferenciación de tumores frente al fondo, mejorando la precisión de segmentación. La segunda orden destaca por resaltar bordes y contornos relevantes. Las métricas mejoran considerablemente frente a los métodos tradicionales.
+
+Este proyecto ha tenido como objetivo mejorar la segmentación automática de tumores en imágenes de ecografía mamaria, aplicando diferentes técnicas de preprocesamiento basadas en textura y usando una red neuronal U-Net entrenada con la librería MONAI. Las ecografías son un tipo de imagen médica especialmente difícil de procesar debido al ruido, al bajo contraste y a la variabilidad entre pacientes. Por eso, era importante estudiar si aplicar transformaciones antes del entrenamiento podía ayudar a obtener mejores resultados.
+
+Después de entrenar la red con imágenes originales y con versiones preprocesadas, se evaluaron los resultados usando métricas estándar como el coeficiente de Dice (DSC), el índice de Jaccard (IoU), la precisión, la sensibilidad (recall), la especificidad y la exactitud general. En todos los casos, los resultados fueron mejores cuando se aplicó preprocesamiento, especialmente con las técnicas de textura de primer y segundo orden. Estas transformaciones ayudaron a resaltar información importante como los bordes del tumor o zonas con mayor variación de intensidad.
+
+Comparando con estudios anteriores, nuestro sistema logró resultados similares o incluso mejores en métricas como el IoU y la precisión, especialmente gracias al uso de MONAI. Esta librería, pensada para imágenes médicas, permitió construir y entrenar la red U-Net de forma más eficiente, reproducible y con menos código. MONAI nos permitió centrarnos en el análisis de datos y en la mejora de la segmentación, sin tener que preocuparnos tanto por los detalles técnicos de bajo nivel.
+
+En resumen, hemos comprobado que aplicar preprocesamiento basado en textura mejora la segmentación de tumores respecto a no aplicar ningún tratamiento previo. Además, el uso de herramientas especializadas como MONAI facilita el desarrollo de sistemas de segmentación robustos y eficaces. Estos resultados son prometedores y abren la puerta a aplicar esta misma estrategia en otros tipos de imágenes médicas, como resonancias o TACs.
+
+Como posibles líneas futuras, se podrían probar otras arquitecturas más avanzadas (como Attention U-Net), aplicar aumentos de datos (data augmentation), trabajar con imágenes en 3D o incluso probar el sistema en entornos clínicos reales, validando los resultados con profesionales médicos.
 
 \section{Autoevaluacion de cada miembro}
 
@@ -490,11 +526,25 @@ Los resultados evidencian que las características de textura aumentan la difere
 \centering
 \begin{tabular}{|c|c|c|c|}
 \hline
-\textbf{Evalúa} & \textbf{Juan} & \textbf{Mar} & \textbf{Nerea} \\
+\textbf{ } & \textbf{Juan} & \textbf{Mar} & \textbf{Nerea} \\
 \hline
-Juan & - & - & - \\
-Mar & - & - & - \\
-Nerea & - & - & - \\
+\makecell{Comprensión \\ y dominio} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Exposición \\ didáctica} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Integración \\ del equipo} & Excelente & Excelente & Excelente \\
+\hline
+Objetivos & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Aspectos \\ didácticos} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Experimentación \\ y conclusiones} & Excelente & Excelente & Excelente \\
+\hline
+Contenidos & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Divulgación de los \\ contenidos} & Excelente & Excelente & Excelente \\
+\hline
+\makecell{Bibliografía. \\ Recursos científicos} & Excelente & Excelente & Excelente \\
 \hline
 \end{tabular}
 \caption{Evaluación entre compañeros}
@@ -502,24 +552,186 @@ Nerea & - & - & - \\
 
 \section{Tabla de tiempos}
 
-\begin{table}[H]
-\centering
-\begin{tabular}{|c|c|c|c|}
+\begin{longtable}{|c|c|c|c|}
 \hline
-\textbf{Tarea} & \textbf{Juan} & \textbf{Mar} & \textbf{Nerea} \\
+\makecell{Fecha de la \\ actividad} 
+& \makecell{Tiempo \\ (h)} 
+& Miembro 
+& \makecell{Actividad \\ realizada} \\
 \hline
-Tarea 1 & - & - & - \\
-Tarea 2 & - & - & - \\
-Tarea 3 & - & - & - \\
-Tarea 4 & - & - & - \\
-Tarea 5 & - & - & - \\
-Tarea 6 & - & - & - \\
+\endfirsthead
+
 \hline
-\end{tabular}
-\caption{Tiempo dedicado a cada tarea}
-\end{table}
+\makecell{Fecha de la \\ actividad} 
+& \makecell{Tiempo \\ (h)} 
+& Miembro 
+& \makecell{Actividad \\ realizada} \\
+\hline
+\endhead
+
+\hline
+\endfoot
+
+18/02/2025 & 2 h 06 min & Nerea & \makecell{Búsqueda de tema y \\ referencia bibliográfica} \\
+\hline
+18/02/2025 & 11 min & Nerea & \makecell{Búsqueda y revisión \\ de repositorio} \\
+\hline
+25/02/2025 & 1 h 28 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 1} \\
+\hline
+28/02/2025 & 2 h 39 min & Nerea & \makecell{Investigación sobre \\ los tumores mamarios} \\
+\hline
+10/03/2025 & 1 h 47 min & Nerea & \makecell{Revisión y análisis del \\ documento .ipynb \\ (primer script)} \\
+\hline
+\makecell{26/02/2025 \\ 4/03/2025 y 11/03/2025} & 5 h 30 min & Nerea & \makecell{Clases dedicadas \\ al proyecto} \\
+\hline
+11/03/2025 & 20 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 2} \\
+\hline
+\makecell{1/04/2025 \\ 4/04/2025 y 7/04/2025} & 7 h 37 min & Nerea & \makecell{Investigación sobre MONAI \\ y redes U-net} \\
+\hline
+7/04/2025 y 8/04/2025 & 3 h 24 min & Nerea & \makecell{Redacción del documento \\ LaTeX: primer borrador} \\
+\hline
+\makecell{1/04/2025, \\ 2/04/2025 \\ 5/04/2025 y \\ 8/04/2025} & 10 h 26 min & Nerea & \makecell{Implementación seguimiento 3: \\ revisión de métodos del \\ preprocesamiento y \\ entrenamiento de la U-net} \\
+\hline
+\makecell{1/04/2025 \\ 5/04/2025 y 8/04/2025} & 6 h 11 min & Nerea & \makecell{Implementación seguimiento 3: \\ pruebas de ajustes del modelo} \\
+\hline
+8/04/2025 & 1 h 02 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 3} \\
+\hline
+29/04/2025 & 1 h 32 min & Nerea & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 4} \\
+\hline
+\makecell{18/04/2025 \\ 28/04/2025} & 3 h 24 min & Nerea & \makecell{Revisión de correcciones de la profesora \\ y resolución de dudas internas sobre \\ el proyecto y MONAI} \\
+\hline
+\makecell{18/04/2025 \\ 20/04/2025 \\ 28/04/2025} & 6 h 36 min & Nerea & \makecell{Redacción y corrección del documento \\ LaTeX con base en la implementación, \\ información aprendida e investigación} \\
+\hline
+29/04/2025 & 2 h & Nerea & \makecell{Presentación: borrador} \\
+\hline
+\makecell{11/05/2025 \\ 12/05/2025} & 4 h 45 min & Nerea & \makecell{Revisión de documento LaTex, \\ pulir lo escrito y preparar \\ para el entregable \\ y guión} \\
+\hline
+\makecell{11/05/2025 \\ 12/05/2025} & 5 h 38 min & Nerea & \makecell{Presentación: elaboración de diapositivas \\ y guión} \\
+\hline
+\makecell{20/05/2025} & 2 h & Nerea & \makecell{Practicar presentación} \\
+\hline
+18/02/2025 & 2 h 24 min & María del Mar & \makecell{Búsqueda de tema y \\ referencia bibliográfica} \\
+\hline
+18/02/2025 & 52 min & María del Mar & \makecell{Búsqueda y revisión \\ de repositorio} \\
+\hline
+25/02/2025 & 1 h 13 min & María del Mar & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 1} \\
+\hline
+27/02/2025 & 3 h 45 min & María del Mar & \makecell{Investigación y comprensión \\ de modelos de segmentación} \\
+\hline
+01/03/2025 & 6 h 12 min & María del Mar & \makecell{Primera implementación} \\
+\hline
+26/02, 4/03 y 11/03/2025 & 5 h 30 min & María del Mar & \makecell{Clases dedicadas al proyecto} \\
+\hline
+11/03/2025 & 13 min & María del Mar & \makecell{Creación, redacción y \\ revisión del documento \\ para el Entregable 2} \\
+\hline
+01/04/2025 & 4 h 11 min & María del Mar & \makecell{Investigación sobre MONAI} \\
+\hline
+02/04/2025 & 4 h 56 min & María del Mar & \makecell{Investigación sobre redes U-Net} \\
+\hline
+03/04/2025 & 2 h & María del Mar & \makecell{Implementación de filtros clásicos \\ en OpenCV (Butterworth, mediana)} \\
+\hline
+03/04/2025 & 4 h 02 min & María del Mar & \makecell{Extracción de características texturales \\ (entropía, bordes, laplaciano)} \\
+\hline
+04/04/2025 & 3 h 45 min & María del Mar & \makecell{Desarrollo del pipeline de \\ preprocesamiento completo} \\
+\hline
+05/04/2025 & 6 h & María del Mar & \makecell{Entrenamiento del modelo UNet \\ con MONAI} \\
+\hline
+06/04/2025 & 4 h 30 min & María del Mar & \makecell{Creación del script de predicción \\ y visualización} \\
+\hline
+06/04/2025 & 2 h 15 min & María del Mar & \makecell{Pruebas y experimentación con \\ diferentes épocas y ajustes} \\
+\hline
+08/04/2025 & 20 min & María del Mar & \makecell{Documento para el Entregable 3} \\
+\hline
+29/04/2025 & 2 h 17 min & María del Mar & \makecell{Redacción del punto de manual de usuario \\ en LaTeX} \\
+29/04/2025 & 10 min & María del Mar & \makecell{Inclusión del punto de experimentación \\ en el documento} \\
+29/04/2025 & 1 h 30 min & María del Mar & \makecell{Redacción inicial del apartado de \\ implementación en LaTeX} \\
+29/04/2025 & 40 min & María del Mar & \makecell{Documento para el Entregable 4} \\
+\hline
+06/05/2025 & 1 h 15 min & María del Mar & \makecell{Continuación de redacción del apartado \\ de implementación en LaTeX} \\
+\hline
+08/05/2025 & 2 h & María del Mar & \makecell{Modificación del manual de usuario para \\ indicar configuraciones y estructura} \\
+\hline
+11/05/2025 & 1 h & María del Mar & \makecell{Revisión final y edición del manual de \\ usuario en el README} \\
+\hline
+12/05/2025 & 1 h & María del Mar & \makecell{Actualización de enlace al dataset y \\ últimos ajustes en el README} \\
+\hline
+20/05/2025 & 2 h & María del Mar & \makecell{Práctica de presentación} \\
+\hline
+18/02/2025 & 2 h & Juan & \makecell{Búsqueda de tema y \\ referencia bibliográfica.} \\
+\hline
+20/02/2025 & 4 h & Juan & \makecell{Investigación y comprensión de filtrado y \\ transformaciones de intensidad} \\
+\hline
+20/02/2025 & 2 h & Juan & \makecell{Investigación sobre filtros gaussianos \\ y filtros medianos} \\
+\hline
+21/02/2025 & 1 h 15 min & Juan & \makecell{Investigación sobre redes neuronales} \\
+\hline
+21/02/2025 & 45 min & Juan & \makecell{Búsqueda de datasets} \\
+\hline
+25/02/2025 & 11 min & Juan & \makecell{Creación, redacción y revisión del documento para el Entregable 1} \\
+\hline
+26/02, 4/03 y 11/03/2025 & 5 h 30 min & Juan & \makecell{Clases dedicadas al proyecto} \\
+\hline
+11/03/2025 & 20 min & Juan & \makecell{Creación, redacción y revisión del \\ documento para el Entregable 2} \\
+\hline
+03/04/2025 & 5 h & Juan & \makecell{Implementación de filtros clásicos \\ (Butterworth, mediana) en OpenCV} \\
+\hline
+03/04/2025 & 7 h & Juan & \makecell{Implementación de extracción de características \\ texturales (entropía, bordes, laplaciano)} \\
+\hline
+04/04/2025 & 3 h 45 min & Juan & \makecell{Desarrollo del pipeline de \\ preprocesamiento clásico completo} \\
+\hline
+05/04/2025 & 2 h 30 min & Juan & \makecell{Búsqueda de máscaras de imágenes \\ del dataset usado} \\
+\hline
+05/04/2025 & 9 h & Juan & \makecell{Entrenamiento del modelo UNet con MONAI} \\
+\hline
+06/04/2025 & 4 h 30 min & Juan & \makecell{Creación del script de predicción y visualización} \\
+\hline
+06/04/2025 & 2 h 15 min & Juan & \makecell{Pruebas y experimentación con \\ diferentes épocas y ajustes} \\
+\hline
+08/04/2025 & 30 min & Juan & \makecell{Creación, redacción y revisión del \\ documento para el Entregable 3} \\
+\hline
+09/04/2025 & 3 h 15 min & Juan & \makecell{Desarrollo de script para cálculo de métricas} \\
+\hline
+10/04/2025 & 2 h 45 min & Juan & \makecell{Adaptación del entrenamiento y predicción de la \\ U-Net para procesar resultados con distintos preprocesamientos} \\
+\hline
+11/04/2025 & 1 h 30 min & Juan & \makecell{Debugging, pruebas de rutas, resolución \\ de errores o formatos de nombres} \\
+\hline
+12/04/2025 & 45 min & Juan & \makecell{Análisis y comparación de resultados obtenidos, \\ e identificación de mejores técnicas} \\
+\hline
+28/04/2025 & 30 min & Juan & \makecell{Redacción de la sección de Experimentación \\ del informe final} \\
+\hline
+29/04/2025 & 15 min & Juan & \makecell{Creación, redacción y revisión del \\ documento para el Entregable 4} \\
+\hline
+02/05/2025 & 2 h 45 min & Juan & Entrenamiento adicional de modelos U-Net para comparar preprocesamientos \\
+\hline
+04/05/2025 & 3 h 30 min & Juan & Comparación de resultados, redacción y revisión completa de la sección de Experimentación del informe final \\
+\hline
+05/05/2025 y 12/05/2025 & 1 h 15 min & Juan & Revisión y correcciones gramaticales y de estilo \\
+\hline
+20/05/2025 & 2 h & Juan & Ensayo y práctica completa de la presentación \\
+\hline
+\caption{Tiempo dedicado al proyecto}
+\end{longtable}
+
 
 \begin{thebibliography}{9}
+
+\bibitem{litjens2017survey}
+Litjens, G., Kooi, T., Bejnordi, B. E., Setio, A. A. A., Ciompi, F., Ghafoorian, M., ... Sánchez, C. I. (2017). \textit{A survey on deep learning in medical image analysis}. Medical image analysis, 42, 60-88. \url{https://doi.org/10.1016/j.media.2017.07.005}
+
+\bibitem{haralick1973}
+Haralick, R. M., Shanmugam, K., Dinstein, I. (1973). \textit{Textural Features for Image Classification}. IEEE Transactions on Systems, Man, and Cybernetics, SMC-3(6), 610–621.
+\url{https://ieeexplore.ieee.org/document/4309314}
+
+\bibitem{goodfellow2016deep}
+Goodfellow, I., Bengio, Y., Courville, A. (2016). \textit{Deep Learning}. MIT Press.
+\url{https://www.deeplearningbook.org/}
+
+\bibitem{ronneberger2015unet}
+Ronneberger, O., Fischer, P., Brox, T. (2015). \textit{U-Net: Convolutional Networks for Biomedical Image Segmentation}. In MICCAI. Disponible en: \url{https://arxiv.org/abs/1505.04597}
+
+\bibitem{taha2015metrics}
+Taha, A. A., Hanbury, A. (2015). \textit{Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool}. BMC Medical Imaging, 15(1), 1–28.
+\url{https://doi.org/10.1186/s12880-015-0068-x}
 
 \bibitem{al2020dataset}
 Fahmy, A. (s.f.). \textit{Dataset}. [Online]. Disponible en: \url{https://scholar.cu.edu.eg/?q=afahmy/pages/dataset}
@@ -592,3 +804,4 @@ Cai, S., Zhang, J., Zhu, Y., \& Liu, T. (2022). "A Study on the Combination of I
 
 \end{thebibliography}
 
+\end{document}
