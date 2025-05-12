@@ -92,20 +92,6 @@ El modelo se construye con la clase \texttt{UNet} de la librería MONAI, con la 
 
 Este modelo, entrenado con imágenes del dataset BUSI y sus respectivas máscaras, se guarda como \texttt{unet\_busi.pt} y luego puede utilizarse para segmentar nuevas ecografías. La arquitectura, gracias a su simetría y al uso de conexiones de salto, ofrece segmentaciones precisas incluso en imágenes complejas y ruidosas como las ecografías mamarias.
 
-\subsection*{Framework MONAI}
-MONAI (Medical Open Network for AI) es una librería desarrollada para facilitar la implementación de modelos de aprendizaje profundo en el campo de la medicina. Extiende las funcionalidades de PyTorch con herramientas especializadas, incluyendo:
-
-\begin{itemize}
-    \item Transformaciones específicas para imágenes médicas (carga de datos, normalización, redimensionamiento).
-    \item Modelos predefinidos como U-Net, V-Net y otros.
-    \item Funciones de pérdida y métricas de evaluación adaptadas a segmentación.
-    \item Integración con formatos de imagen médica (DICOM, NIfTI).
-\end{itemize}
-
-Gracias a MONAI, el desarrollo de este proyecto se beneficia de un entorno robusto y reproducible, permitiendo un enfoque modular y escalable para el tratamiento de imágenes médicas.
-
-
-
 \section{Implementación}
 \subsection{Obtención y preparación del dataset}
 
