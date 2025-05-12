@@ -106,7 +106,7 @@ Gracias a MONAI, el desarrollo de este proyecto se beneficia de un entorno robus
 \section{Implementación}
 \subsection{Obtención y preparación del dataset}
 
-Para llevar a cabo la tarea de segmentación de tumores en imágenes de ecografía mamaria, se ha utilizado el conjunto de datos público \texttt{Dataset\_BUSI\_with\_GT}, disponible en la plataforma Kaggle\footnote{\href{https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset}{Dataset en Kaggle}}. Este dataset está compuesto por un total de 1.578 imágenes ecográficas divididas en tres categorías clínicas: \textit{benignas} (891 imágenes), \textit{malignas} (421 imágenes) y \textit{normales} (266 imágenes). En cada carpeta, el total de imágenes indicado comprende la propia imagen del tumor junto con su correspondiente máscara de segmentación manual \cite{al2020dataset}.
+Para llevar a cabo la tarea de segmentación de tumores en imágenes de ecografía mamaria, se ha utilizado el conjunto de datos público \texttt{Breast Ultrasound Images Dataset (Dataset BUSI)}, disponible en la página de Aly Fahmy\footnote{\href{https://scholar.cu.edu.eg/?q=afahmy/pages/dataset}{Dataset BUSI}}. Este dataset está compuesto por un total de 780 imágenes ecográficas divididas en tres categorías clínicas: \textit{benignas}, \textit{malignas} y \textit{normales}, junto con su correspondiente máscara de segmentación manual \cite{al2020dataset}.
 
 Para el tratamiento de las imágenes del dataset, lo que se ha hecho en nuestro código ha sido, en primer lugar, organizar el conjunto de datos localmente en una estructura de carpetas separadas por clases. Y en segundo lugar, se estandariza el tamaño de las imágenes y sus máscaras, de forma que todas compartan las mismas dimensiones. Esta homogeneización se lleva a cabo con el objetivo de introducir los datos en el modelo de segmentación, ya que dicho modelo necesita entradas con dimensiones fijas.
 
@@ -522,7 +522,8 @@ Tarea 6 & - & - & - \\
 \begin{thebibliography}{9}
 
 \bibitem{al2020dataset}
-A. Al-Dhabyani, M. Gomaa, H. Khaled and A. Fahmy, "Dataset of breast ultrasound images," Data in Brief, vol. 28, p. 104863, 2020.
+Fahmy, A. (s.f.). \textit{Dataset}. [Online]. Disponible en: \url{https://scholar.cu.edu.eg/?q=afahmy/pages/dataset}
+
 
 \bibitem{numpy}
 NumPy Developers, \textit{NumPy Documentation}, [Online]. Disponible en: \url{https://numpy.org/doc/stable/}
@@ -591,4 +592,3 @@ Cai, S., Zhang, J., Zhu, Y., \& Liu, T. (2022). "A Study on the Combination of I
 
 \end{thebibliography}
 
-\end{document}
