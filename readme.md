@@ -1,7 +1,7 @@
 # Manual de Usuario
 
 **Enlace al dataset:**  
-[Dataset BUSI with GT - Kaggle](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset)
+[Dataset BUSI](https://scholar.cu.edu.eg/?q=afahmy/pages/dataset)
 
 ## Requisitos del sistema
 
