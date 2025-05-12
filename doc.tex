@@ -11,7 +11,9 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{hyperref}
+\usepackage{tikz}
 \usepackage{listings}
+\usetikzlibrary{positioning}
 \geometry{margin=2.5cm}
 
 \title{Preprocesamiento Basado en Textura para la Segmentación de Tumores en Ecografías Mamarias con MONAI}
@@ -23,10 +25,12 @@
 \maketitle
 
 \begin{abstract}
-El resumen se hace al final del trabajo
+En este trabajo se propone una forma de mejorar la detección automática de tumores en ecografías mamarias, utilizando técnicas de preprocesamiento y redes neuronales. Las ecografías son imágenes que pueden tener mucho ruido y poco contraste, lo que hace difícil que un modelo detecte tumores. Para solucionar esto, antes de entrenar la red neuronal, se aplican distintos métodos de mejora de imagen. Después, estas imágenes se procesan con una red neuronal llamada U-Net, muy utilizada en medicina para separar automáticamente regiones de interés en una imagen.
+
+Todo el sistema se ha implementado con la ayuda de MONAI, una librería especializada en imágenes médicas. Se ha utilizado un conjunto real de imágenes de mama (el dataset BUSI) y se han probado diferentes versiones del modelo: con imágenes originales, con filtros y con texturas. Los resultados muestran que aplicar estas técnicas de mejora antes del entrenamiento permite al modelo hacer predicciones más precisas. Esto demuestra que el preprocesamiento puede ser una herramienta clave para mejorar los sistemas de diagnóstico por imagen.
 \end{abstract}
 
-\textbf{Palabras clave:} segmentación, MONAI, características de textura, U-Net, preprocesamiento, ecografía mamaria.
+\textbf{Palabras clave:} segmentación automática, ecografía mamaria, U-Net, MONAI, preprocesamiento de imágenes, aprendizaje profundo.
 
 \section{Introducción}
 El cáncer de mama representa una de las principales causas de mortalidad femenina. La segmentación precisa de tumores en imágenes de ecografía mamaria es esencial para el diagnóstico asistido por computadora. Sin embargo, estas imágenes presentan artefactos, bajo contraste y ruido speckle que dificultan la segmentación automática. Este trabajo propone comparar métodos de preprocesamiento tradicionales y texturales para mejorar la calidad de segmentación utilizando una red U-Net.
@@ -91,6 +95,27 @@ El modelo se construye con la clase \texttt{UNet} de la librería MONAI, con la 
 \end{itemize}
 
 Este modelo, entrenado con imágenes del dataset BUSI y sus respectivas máscaras, se guarda como \texttt{unet\_busi.pt} y luego puede utilizarse para segmentar nuevas ecografías. La arquitectura, gracias a su simetría y al uso de conexiones de salto, ofrece segmentaciones precisas incluso en imágenes complejas y ruidosas como las ecografías mamarias.
+
+\subsection{Esquema del pipeline general}
+A continuación se presenta el flujo de trabajo general del sistema:
+\begin{center}
+\begin{tikzpicture}[node distance=1.6cm, every node/.style={draw, text width=5cm, minimum height=1.2cm, align=center}, ->, >=stealth]
+  \node (input) {Imagen original};
+  \node (prep) [below=of input, fill=orange!20] {Preprocesamiento: filtros y texturas};
+  \node (proc) [below=of prep] {Imagen procesada};
+  \node (unet) [below=of proc, fill=yellow!20] {Red neuronal U-Net (entrenamiento o inferencia)};
+  \node (mask) [below=of unet] {Máscara segmentada};
+  \node (eval) [below=of mask, fill=purple!20] {Evaluación con métricas: Dice, IoU, etc.};
+
+  \draw (input) -- (prep);
+  \draw (prep) -- (proc);
+  \draw (proc) -- (unet);
+  \draw (unet) -- (mask);
+  \draw (mask) -- (eval);
+\end{tikzpicture}
+\end{center}
+
+
 
 \section{Implementación}
 \subsection{Obtención y preparación del dataset}
